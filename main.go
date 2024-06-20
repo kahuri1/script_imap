@@ -45,7 +45,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(mbox)
+		//log.Println("Flags for INBOX:", mbox.Flags)
+
 		// Get the last 4 messages // TODO если писем меньше то будет выводить последнее нужна проверка еще на уид
 		to := mbox.Messages
 		seqset := new(imap.SeqSet)
@@ -65,19 +66,14 @@ func main() {
 			log.Println("* " + msg.Envelope.Subject)
 			lastIUD = msg.Envelope.MessageId
 			from++
-			err := saveLastMessageInfo(int64(from), lastIUD)
-			if err != nil {
-				logrus.Fatalf("error getting uid : %s", err.Error())
-			}
-
-			//получения вложения
-
-			if err := <-done; err != nil {
-				log.Fatal(err)
-			}
-
-			time.Sleep(time.Second * 5)
+			saveLastMessageInfo(int64(from), lastIUD)
 		}
+
+		if err := <-done; err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Ожидание письма")
+		time.Sleep(time.Second * 2)
 	}
 }
 
