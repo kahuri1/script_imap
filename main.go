@@ -3,12 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"time"
 
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/client"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
@@ -18,10 +20,25 @@ type Config struct {
 }
 
 func main() {
+
 	log.Println("Connecting to server...")
 
+	viper.AddConfigPath(".")
+	viper.SetConfigName("config")
+	err := viper.ReadInConfig()
+	if err != nil {
+
+		fmt.Println("error")
+	}
+
+	cfg := Config{
+		Imap:     viper.GetString("imap"),
+		Email:    viper.GetString("email"),
+		Password: viper.GetString("password"),
+	}
+
 	// Connect to server
-	c, err := client.DialTLS("imap.mail.ru:993", nil)
+	c, err := client.DialTLS(cfg.Imap, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -31,19 +48,11 @@ func main() {
 	defer c.Logout()
 
 	// Login
-	if err := c.Login("bulanva@internet.ru", "QLQgCWrcCCwUz1RGdxqb"); err != nil {
+	if err := c.Login(cfg.Email, cfg.Password); err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Logged in")
 
-	// Select INBOX
-	//TODO INBOX - нужно вывести в конфиг
-
-	//if mbox.Messages > 3 {
-	//	// We're using unsigned integers here, only subtract if the result is > 0
-	//	from = mbox.Messages - 3
-	//}
-	//log.Println("Last 4 messages:")
 	lastIUD := ""
 	from := uint32(1)
 	for {
@@ -52,7 +61,6 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//log.Println("Flags for INBOX:", mbox.Flags)
 
 		// Get the last 4 messages // TODO если писем меньше то будет выводить последнее нужна проверка еще на уид
 		to := mbox.Messages
@@ -74,13 +82,44 @@ func main() {
 			lastIUD = msg.Envelope.MessageId
 			from++
 			saveLastMessageInfo(int64(from), lastIUD)
-		}
+			//получения вложения
+			for msg := range messages {
+				if msg.BodyStructure == nil {
+					log.Println("Сообщение не содержит вложений")
+					continue
+				}
+				entity, err := c.ReadTo(r)
+				if err != nil {
+					log.Fatal(err)
+				}
+				multiPartReader := entity.MultipartReader()
+				e, err := multiPartReader.NextPart()
+                        if err == io.EOF {
+                            break
+                        }
+				data, err := io.ReadAll(e.Body)
+                            if err != nil {
+                                log.Fatal(err)
+                            }
+				for _, part := range msg.Body {
+								fileName := "/tmp/" + params["name"]
+								if err := os.WriteFile(fileName, data, 0644); err != nil {
+									log.Fatal(err)
+								}
+	
+								log.Printf("Файл %s сохранен", fileName)
+							}
+						
+					
+				
 
 		if err := <-done; err != nil {
 			log.Fatal(err)
 		}
 
 		time.Sleep(time.Second * 5)
+	}
+}
 	}
 }
 
