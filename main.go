@@ -8,18 +8,18 @@ import (
 	"time"
 
 	"github.com/emersion/go-imap"
+	"github.com/emersion/go-imap/client"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
-type Config struct {
-	Imap     string
-	Email    string
-	Password string
-}
-
 func main() {
+	if err := initConfig(); err != nil {
+		logrus.Fatalf("error initializing configs: %s", err.Error())
+	}
 
-	c := Connect(Config{})
-
+	c := Connect()
+	defer c.Logout()
 	lastIUD := ""
 	from := uint32(1)
 	for {
@@ -60,11 +60,6 @@ func main() {
 	}
 }
 
-type LastMessageInfo struct {
-	CountMessage int64  `json:"count_message"`
-	LastUID      string `json:"last_uid"`
-}
-
 func saveLastMessageInfo(lastID int64, uid string) error {
 	ms := &LastMessageInfo{
 		CountMessage: lastID,
@@ -86,4 +81,45 @@ func saveLastMessageInfo(lastID int64, uid string) error {
 	fmt.Println("LastMessageInfo saved successfully.")
 
 	return nil
+}
+
+func initConfig() error {
+
+	viper.AddConfigPath(".")
+	viper.SetConfigName("config")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("файл config не найден: %w", err))
+	}
+	return viper.ReadInConfig()
+}
+
+func initAuth() Config {
+	cfg := Config{
+		Imap:     viper.GetString("imap"),
+		Email:    viper.GetString("email"),
+		Password: viper.GetString("password"),
+	}
+	return cfg
+
+}
+
+func Connect() *client.Client {
+	log.Println("Connecting to server...")
+
+	cfg := initAuth()
+
+	// Connect to server
+	c, err := client.DialTLS(cfg.Imap, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Connected")
+
+	// Login
+	if err := c.Login(cfg.Email, cfg.Password); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("Logged in")
+	return c
 }
