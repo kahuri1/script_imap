@@ -18,8 +18,25 @@ func main() {
 		logrus.Fatalf("error initializing configs: %s", err.Error())
 	}
 
-	c := Connect()
-	defer c.Logout()
+	cfg := initAuth()
+
+	c, err := ConnectServer(cfg)
+
+	if err != nil {
+		logrus.Fatalf("error connect server: %s", err.Error())
+	}
+
+	defer func() {
+		if err := c.Logout(); err != nil {
+			logrus.Errorf("error logging out: %s", err.Error())
+		}
+	}()
+
+	err = loginToMail(cfg, c)
+	if err != nil {
+		logrus.Fatalf("error loginToMail: %s", err.Error())
+	}
+
 	lastIUD := ""
 	from := uint32(1)
 	for {
@@ -28,7 +45,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-
+		fmt.Println(mbox)
 		// Get the last 4 messages // TODO если писем меньше то будет выводить последнее нужна проверка еще на уид
 		to := mbox.Messages
 		seqset := new(imap.SeqSet)
@@ -48,7 +65,11 @@ func main() {
 			log.Println("* " + msg.Envelope.Subject)
 			lastIUD = msg.Envelope.MessageId
 			from++
-			saveLastMessageInfo(int64(from), lastIUD)
+			err := saveLastMessageInfo(int64(from), lastIUD)
+			if err != nil {
+				logrus.Fatalf("error getting uid : %s", err.Error())
+			}
+
 			//получения вложения
 
 			if err := <-done; err != nil {
@@ -70,7 +91,11 @@ func saveLastMessageInfo(lastID int64, uid string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			logrus.Errorf("error logging out: %s", err.Error())
+		}
+	}()
 
 	encoder := json.NewEncoder(file)
 	err = encoder.Encode(ms)
@@ -104,22 +129,23 @@ func initAuth() Config {
 
 }
 
-func Connect() *client.Client {
+func ConnectServer(cfg Config) (*client.Client, error) {
 	log.Println("Connecting to server...")
-
-	cfg := initAuth()
-
 	// Connect to server
 	c, err := client.DialTLS(cfg.Imap, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Connected")
+	return c, nil
+}
 
+func loginToMail(cfg Config, c *client.Client) error {
 	// Login
 	if err := c.Login(cfg.Email, cfg.Password); err != nil {
 		log.Fatal(err)
 	}
 	log.Println("Logged in")
-	return c
+
+	return nil
 }
