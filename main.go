@@ -1,16 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/emersion/go-imap"
-	"github.com/emersion/go-imap/client"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 func main() {
@@ -58,15 +54,21 @@ func main() {
 			done <- c.Fetch(seqset, []imap.FetchItem{imap.FetchEnvelope}, messages)
 		}()
 
+		//TODO тут нужно поменять или вообще убрать рейнд, чтобы он не считывал письма, у нас же есть последний UID
 		for msg := range messages {
 			if msg.Envelope.MessageId == lastIUD {
 				continue
-			}
+			} else {
 
-			log.Println("* " + msg.Envelope.Subject)
-			lastIUD = msg.Envelope.MessageId
-			from++
-			saveLastMessageInfo(int64(from), lastIUD)
+				log.Println("* " + msg.Envelope.Subject)
+				lastIUD = msg.Envelope.MessageId
+				from++
+
+				err := saveLastMessageInfo(int64(from), lastIUD)
+				if err != nil {
+					logrus.Errorf("error saving last message to file: %s", err.Error())
+				}
+			}
 		}
 
 		if err := <-done; err != nil {
@@ -75,86 +77,4 @@ func main() {
 		fmt.Println("Ожидание письма")
 		time.Sleep(time.Second * 2)
 	}
-}
-
-func saveLastMessageInfo(lastID int64, uid string) error {
-	ms := &LastMessageInfo{
-		CountMessage: lastID,
-		LastUID:      uid,
-	}
-	err := SetDefaultUID(uid)
-	if err != nil {
-		logrus.Errorf("error save uid: %s", err.Error())
-	}
-	file, err := os.Create("LastMessageInfo.json")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			logrus.Errorf("error logging out: %s", err.Error())
-		}
-	}()
-
-	encoder := json.NewEncoder(file)
-	err = encoder.Encode(ms)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("LastMessageInfo saved successfully.")
-
-	return nil
-}
-
-func initConfig() error {
-
-	viper.AddConfigPath(".")
-	viper.SetConfigName("config")
-	err := viper.ReadInConfig()
-	if err != nil {
-		panic(fmt.Errorf("файл config не найден: %w", err))
-	}
-	return viper.ReadInConfig()
-}
-
-func initAuth() Config {
-	cfg := Config{
-		Imap:     viper.GetString("imap"),
-		Email:    viper.GetString("email"),
-		Password: viper.GetString("password"),
-		LastUID:  viper.GetString("LastUID"),
-	}
-
-	return cfg
-
-}
-
-func ConnectServer(cfg Config) (*client.Client, error) {
-	log.Println("Connecting to server...")
-	// Connect to server
-	c, err := client.DialTLS(cfg.Imap, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Connected")
-	return c, nil
-}
-
-func loginToMail(cfg Config, c *client.Client) error {
-	// Login
-	if err := c.Login(cfg.Email, cfg.Password); err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Logged in")
-
-	return nil
-}
-
-func SetDefaultUID(LastUID string) error {
-	viper.SetDefault("lastuid", LastUID)
-	if err := viper.WriteConfig(); err != nil {
-		logrus.Fatalf("error saving LastUID to config: %s", err.Error())
-	}
-	return nil
 }
