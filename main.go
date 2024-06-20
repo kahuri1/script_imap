@@ -37,7 +37,7 @@ func main() {
 		logrus.Fatalf("error loginToMail: %s", err.Error())
 	}
 
-	lastIUD := ""
+	lastIUD := cfg.LastUID
 	from := uint32(1)
 	for {
 
@@ -82,7 +82,10 @@ func saveLastMessageInfo(lastID int64, uid string) error {
 		CountMessage: lastID,
 		LastUID:      uid,
 	}
-
+	err := SetDefaultUID(uid)
+	if err != nil {
+		logrus.Errorf("error save uid: %s", err.Error())
+	}
 	file, err := os.Create("LastMessageInfo.json")
 	if err != nil {
 		return err
@@ -120,7 +123,9 @@ func initAuth() Config {
 		Imap:     viper.GetString("imap"),
 		Email:    viper.GetString("email"),
 		Password: viper.GetString("password"),
+		LastUID:  viper.GetString("LastUID"),
 	}
+
 	return cfg
 
 }
@@ -143,5 +148,13 @@ func loginToMail(cfg Config, c *client.Client) error {
 	}
 	log.Println("Logged in")
 
+	return nil
+}
+
+func SetDefaultUID(LastUID string) error {
+	viper.SetDefault("lastuid", LastUID)
+	if err := viper.WriteConfig(); err != nil {
+		logrus.Fatalf("error saving LastUID to config: %s", err.Error())
+	}
 	return nil
 }

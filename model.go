@@ -4,6 +4,7 @@ type Config struct {
 	Imap     string
 	Email    string
 	Password string
+	LastUID  string
 }
 
 type LastMessageInfo struct {
