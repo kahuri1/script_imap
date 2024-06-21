@@ -58,7 +58,7 @@ func main() {
 				lastIUD = msg.Envelope.MessageId
 				from++
 
-				err := SetDefaultFrom(from)
+				err := SetDefaultValue(from, lastIUD)
 				if err != nil {
 					logrus.Fatalf("error setting default from: %s", err.Error())
 				}

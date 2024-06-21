@@ -61,10 +61,16 @@ func SetDefaultUID(LastUID string) error {
 	return nil
 }
 
-func SetDefaultFrom(from uint32) error {
+func SetDefaultValue(from uint32, uid string) error {
 	viper.Set("from", from)
 	if err := viper.WriteConfig(); err != nil {
 		logrus.Fatalf("error saving from to config: %s", err.Error())
 	}
+
+	viper.Set("last_uid", uid)
+	if err := viper.WriteConfig(); err != nil {
+		logrus.Fatalf("error saving from to config: %s", err.Error())
+	}
+
 	return nil
 }
