@@ -63,7 +63,7 @@ func main() {
 						log.Fatal(err)
 					}
 
-					//TODO тут нам нужно разобраться с расширением
+					//TODO тут нам нужно разобраться с расширением adsda
 					err = ioutil.WriteFile("output.html", data, 0644)
 					if err != nil {
 						log.Fatal(err)
