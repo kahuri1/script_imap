@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/emersion/go-imap"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"log"
 	"time"
 )
@@ -41,12 +42,13 @@ func main() {
 		// Get the last 4 messages // TODO если писем меньше то будет выводить последнее нужна проверка еще на уид
 		to := mbox.Messages
 		seqset := new(imap.SeqSet)
+		sect := &imap.BodySectionName{}
 		seqset.AddRange(from, to)
 
 		messages := make(chan *imap.Message, 1)
 		done := make(chan error, 1)
 		go func() {
-			done <- c.Fetch(seqset, []imap.FetchItem{imap.FetchEnvelope}, messages)
+			done <- c.Fetch(seqset, []imap.FetchItem{sect.FetchItem(), imap.FetchEnvelope}, messages)
 		}()
 
 		for msg := range messages {
@@ -54,6 +56,20 @@ func main() {
 				continue
 			} else {
 				log.Println("* " + msg.Envelope.Subject)
+				for _, p := range msg.Body {
+
+					data, err := ioutil.ReadAll(p) // Читаем содержимое файла в []byte
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					//TODO тут нам нужно разобраться с расширением
+					err = ioutil.WriteFile("output.html", data, 0644)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+				}
 
 				lastIUD = msg.Envelope.MessageId
 				from++

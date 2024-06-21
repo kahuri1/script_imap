@@ -24,7 +24,7 @@ func initAuth() Config {
 		Imap:     viper.GetString("imap"),
 		Email:    viper.GetString("email"),
 		Password: viper.GetString("password"),
-		LastUID:  viper.GetString("LastUID"),
+		LastUID:  viper.GetString("last_uid"),
 		From:     viper.GetUint32("from"),
 	}
 
