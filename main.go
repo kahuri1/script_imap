@@ -15,7 +15,6 @@ func main() {
 
 	cfg := initAuth()
 	c, err := ConnectServer(cfg)
-
 	if err != nil {
 		logrus.Fatalf("error connect server: %s", err.Error())
 	}
@@ -30,16 +29,10 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("error loginToMail: %s", err.Error())
 	}
-
+	from := cfg.From
 	lastIUD := cfg.LastUID
 
-	if err != nil {
-		logrus.Fatalf("error saving from to config: %s", err.Error())
-	}
-	from := cfg.From
-
 	for {
-
 		mbox, err := c.Select("INBOX", false)
 		if err != nil {
 			log.Fatal(err)
@@ -57,7 +50,6 @@ func main() {
 			done <- c.Fetch(seqset, []imap.FetchItem{imap.FetchEnvelope}, messages)
 		}()
 
-		// тут нужно поменять или вообще убрать рейнд, чтобы он не считывал письма, у нас же есть последний UID
 		for msg := range messages {
 
 			if msg.Envelope.MessageId == lastIUD {
@@ -66,11 +58,11 @@ func main() {
 
 				log.Println("* " + msg.Envelope.Subject)
 				lastIUD = msg.Envelope.MessageId
+				from++
 				err := SetDefaultFrom(from)
 				if err != nil {
 					logrus.Fatalf("error setting default from: %s", err.Error())
 				}
-				from++
 
 				err = saveLastMessageInfo(int64(from), lastIUD)
 				if err != nil {
@@ -82,7 +74,9 @@ func main() {
 		if err := <-done; err != nil {
 			log.Fatal(err)
 		}
+		//удалить
 		fmt.Println("Ожидание письма")
-		time.Sleep(time.Second * 2)
+		//
+		time.Sleep(time.Second * 5)
 	}
 }

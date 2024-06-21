@@ -54,7 +54,7 @@ func loginToMail(cfg Config, c *client.Client) error {
 }
 
 func SetDefaultUID(LastUID string) error {
-	viper.SetDefault("lastuid", LastUID)
+	viper.Set("lastuid", LastUID)
 	if err := viper.WriteConfig(); err != nil {
 		logrus.Fatalf("error saving LastUID to config: %s", err.Error())
 	}
@@ -62,7 +62,7 @@ func SetDefaultUID(LastUID string) error {
 }
 
 func SetDefaultFrom(from uint32) error {
-	viper.SetDefault("from", from)
+	viper.Set("from", from)
 	if err := viper.WriteConfig(); err != nil {
 		logrus.Fatalf("error saving from to config: %s", err.Error())
 	}
