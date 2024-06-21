@@ -5,6 +5,7 @@ type Config struct {
 	Email    string
 	Password string
 	LastUID  string
+	From     uint32
 }
 
 type LastMessageInfo struct {

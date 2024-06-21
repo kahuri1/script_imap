@@ -25,6 +25,7 @@ func initAuth() Config {
 		Email:    viper.GetString("email"),
 		Password: viper.GetString("password"),
 		LastUID:  viper.GetString("LastUID"),
+		From:     viper.GetUint32("from"),
 	}
 
 	return cfg
@@ -56,6 +57,14 @@ func SetDefaultUID(LastUID string) error {
 	viper.SetDefault("lastuid", LastUID)
 	if err := viper.WriteConfig(); err != nil {
 		logrus.Fatalf("error saving LastUID to config: %s", err.Error())
+	}
+	return nil
+}
+
+func SetDefaultFrom(from uint32) error {
+	viper.SetDefault("from", from)
+	if err := viper.WriteConfig(); err != nil {
+		logrus.Fatalf("error saving from to config: %s", err.Error())
 	}
 	return nil
 }
