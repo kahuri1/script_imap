@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/emersion/go-imap"
 	"github.com/sirupsen/logrus"
 	"log"
@@ -19,16 +18,16 @@ func main() {
 		logrus.Fatalf("error connect server: %s", err.Error())
 	}
 
+	err = loginToMail(cfg, c)
+	if err != nil {
+		logrus.Fatalf("error loginToMail: %s", err.Error())
+	}
 	defer func() {
 		if err := c.Logout(); err != nil {
 			logrus.Errorf("error logging out: %s", err.Error())
 		}
 	}()
 
-	err = loginToMail(cfg, c)
-	if err != nil {
-		logrus.Fatalf("error loginToMail: %s", err.Error())
-	}
 	from := cfg.From
 	lastIUD := cfg.LastUID
 
@@ -51,22 +50,17 @@ func main() {
 		}()
 
 		for msg := range messages {
-
 			if msg.Envelope.MessageId == lastIUD {
 				continue
 			} else {
-
 				log.Println("* " + msg.Envelope.Subject)
+
 				lastIUD = msg.Envelope.MessageId
 				from++
+
 				err := SetDefaultFrom(from)
 				if err != nil {
 					logrus.Fatalf("error setting default from: %s", err.Error())
-				}
-
-				err = saveLastMessageInfo(int64(from), lastIUD)
-				if err != nil {
-					logrus.Errorf("error saving last message to file: %s", err.Error())
 				}
 			}
 		}
@@ -74,9 +68,7 @@ func main() {
 		if err := <-done; err != nil {
 			log.Fatal(err)
 		}
-		//удалить
-		fmt.Println("Ожидание письма")
-		//
+
 		time.Sleep(time.Second * 5)
 	}
 }
