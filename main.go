@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/emersion/go-imap"
+	"github.com/emersion/go-message/mail"
+	"github.com/sirupsen/logrus"
+	"io"
+	"io/ioutil"
 	"log"
 	"time"
-
-	"github.com/emersion/go-imap"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -50,8 +52,11 @@ func main() {
 
 		messages := make(chan *imap.Message)
 		done := make(chan error, 1)
+
+		 section := &imap.BodySectionName{}
+		items := [] imap. FetchItem{section. FetchItem()}
 		go func() {
-			done <- c.Fetch(seqset, []imap.FetchItem{imap.FetchEnvelope}, messages)
+			done <- c.Fetch(seqset, items, messages)
 		}()
 
 		//TODO тут нужно поменять или вообще убрать рейнд, чтобы он не считывал письма, у нас же есть последний UID
@@ -63,18 +68,46 @@ func main() {
 				log.Println("* " + msg.Envelope.Subject)
 				lastIUD = msg.Envelope.MessageId
 				from++
+				//TODO вложение
+				r := msg. GetBody(section)
+				if r == nil {
+					log. Fatal("Server didn't returned message body")
+				}
+				if err := <-done; err != nil {
+					log.Fatal(err)
+				}
 
-				err := saveLastMessageInfo(int64(from), lastIUD)
+				m, err := mail.ReadMessage(r)
 				if err != nil {
-					logrus.Errorf("error saving last message to file: %s", err.Error())
+					log.Fatal(err)
+				}
+
+				header := m.Header
+				log.Println("Date:", header.Get("Date"))
+				log.Println("From:", header.Get("From"))
+				log.Println("To:", header.Get("To"))
+				log.Println("Subject:", header.Get("Subject"))
+
+				body, err := io.ReadAll(m.Body)
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Println(body)
+
+					//TODO вложение
+
+					err = saveLastMessageInfo(int64(from), lastIUD)
+					if err != nil {
+						logrus.Errorf("error saving last message to file: %s", err.Error())
+					}
 				}
 			}
-		}
 
-		if err := <-done; err != nil {
-			log.Fatal(err)
+			if err := <-done; err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("Ожидание письма")
+			time.Sleep(time.Second * 2)
 		}
-		fmt.Println("Ожидание письма")
-		time.Sleep(time.Second * 2)
 	}
 }
