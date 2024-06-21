@@ -44,7 +44,7 @@ func main() {
 			log.Fatal(err)
 		}
 		//log.Println("Flags for INBOX:", mbox.Flags)
-
+		// Get the last 4 messages
 		// Get the last 4 messages // TODO если писем меньше то будет выводить последнее нужна проверка еще на уид
 		to := mbox.Messages
 		seqset := new(imap.SeqSet)
@@ -59,7 +59,7 @@ func main() {
 			done <- c.Fetch(seqset, items, messages)
 		}()
 
-		//TODO тут нужно поменять или вообще убрать рейнд, чтобы он не считывал письма, у нас же есть последний UID
+		// тут нужно поменять или вообще убрать рейнд, чтобы он не считывал письма, у нас же есть последний UID
 		for msg := range messages {
 			if msg.Envelope.MessageId == lastIUD {
 				continue
@@ -68,7 +68,7 @@ func main() {
 				log.Println("* " + msg.Envelope.Subject)
 				lastIUD = msg.Envelope.MessageId
 				from++
-				//TODO вложение
+				//вложение
 				r := msg. GetBody(section)
 				if r == nil {
 					log. Fatal("Server didn't returned message body")
@@ -94,7 +94,7 @@ func main() {
 				}
 				log.Println(body)
 
-					//TODO вложение
+					//вложение
 
 					err = saveLastMessageInfo(int64(from), lastIUD)
 					if err != nil {
