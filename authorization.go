@@ -26,6 +26,7 @@ func initAuth() Config {
 		Password: viper.GetString("password"),
 		LastUID:  viper.GetString("last_uid"),
 		From:     viper.GetUint32("from"),
+		Storage:  viper.GetString("file_storage_directory"),
 	}
 
 	return cfg
