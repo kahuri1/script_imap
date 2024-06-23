@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-message/mail"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -40,9 +40,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		//log.Println("Flags for INBOX:", mbox.Flags)
-		// Get the last 4 messages
-		// Get the last 4 messages // TODO если писем меньше то будет выводить последнее нужна проверка еще на уид
+
 		to := mbox.Messages
 		seqset := new(imap.SeqSet)
 		sect := &imap.BodySectionName{}
@@ -50,12 +48,7 @@ func main() {
 
 		messages := make(chan *imap.Message, 1)
 		done := make(chan error, 1)
-		section := &imap.BodySectionName{
-			/* BodyPartName: imap.BodyPartName{
-				Specifier: imap.MIMESpecifier,
-				Fields:    []string{"X-Priority", "Priority"},
-			}, */
-		}
+		section := &imap.BodySectionName{}
 
 		go func() {
 			done <- c.Fetch(seqset, []imap.FetchItem{sect.FetchItem(), imap.FetchEnvelope}, messages)
@@ -65,7 +58,7 @@ func main() {
 			if msg.Envelope.MessageId == lastIUD {
 				continue
 			} else {
-				log.Println("* " + msg.Envelope.Subject)
+				//log.Println("* " + msg.Envelope.Subject)
 
 				mr, err := mail.CreateReader(msg.GetBody(section))
 				if err != nil {
@@ -81,42 +74,21 @@ func main() {
 						log.Fatal(err)
 					}
 
-					//disp := p.Header.Get("Content-Disposition")
-
 					switch h := p.Header.(type) {
-					//case *mail.InlineHeader:
-					//	// This is the message's text (can be plain-text or HTML)
-					//	b, _ := ioutil.ReadAll(p.Body)
-					//	if disp != "" {
-					//
-					//		contentID := h.Get("Content-ID")
-					//
-					//		_, pr, _ := h.ContentType()
-					//
-					//		filename := fmt.Sprintf("%s.%s", contentID, pr["name"])
-					//
-					//		ioutil.WriteFile(filename, b, 0777)
-					//
-					//	} else {
-					//		log.Printf("Got ====: %s", string(b))
-					//	}
-					case *mail.AttachmentHeader:
 
-						log.Printf("Got attachment==========")
+					case *mail.AttachmentHeader:
 						// This is an attachment
 						filename, _ := h.Filename()
 
-						log.Printf("Got attachment: %v", filename)
-						b, errp := ioutil.ReadAll(p.Body)
-						fmt.Println("errp ===== :", errp)
-						err := ioutil.WriteFile(cfg.Storage+filename, b, 0777)
+						b, _ := ioutil.ReadAll(p.Body)
+						err := ioutil.WriteFile(cfg.Storage+random()+" "+filename, b, 0777)
 
 						if err != nil {
-							log.Println("attachment err: ", err)
 							break
 						}
 					}
 				}
+
 				lastIUD = msg.Envelope.MessageId
 				from++
 				err = SetDefaultValue(from, lastIUD)
@@ -132,4 +104,19 @@ func main() {
 		time.Sleep(time.Second * 5)
 
 	}
+}
+func random() string {
+	rand.Seed(time.Now().UnixNano())
+
+	const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" // символы, из которых будет формироваться строка
+	length := 4                                                                      // длина генерируемой строки
+
+	randomValue := make([]byte, length)
+	for i := range randomValue {
+		randomValue[i] = charset[rand.Intn(len(charset))]
+	}
+
+	result := string(randomValue)
+
+	return result
 }
