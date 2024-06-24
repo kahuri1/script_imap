@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"time"
 )
 
@@ -58,14 +57,12 @@ func main() {
 			if msg.Envelope.MessageId == lastIUD {
 				continue
 			} else {
-				//log.Println("* " + msg.Envelope.Subject)
 
 				mr, err := mail.CreateReader(msg.GetBody(section))
 				if err != nil {
 					log.Fatal(err)
 				}
 
-				// Process each message's part
 				for {
 					p, err := mr.NextPart()
 					if err == io.EOF {
@@ -77,11 +74,10 @@ func main() {
 					switch h := p.Header.(type) {
 
 					case *mail.AttachmentHeader:
-						// This is an attachment
 						filename, _ := h.Filename()
 
 						b, _ := ioutil.ReadAll(p.Body)
-						err := ioutil.WriteFile(cfg.Storage+random()+" "+filename, b, 0777)
+						err := ioutil.WriteFile(cfg.Storage+filename, b, 0777)
 
 						if err != nil {
 							break
@@ -104,19 +100,4 @@ func main() {
 		time.Sleep(time.Second * 5)
 
 	}
-}
-func random() string {
-	rand.Seed(time.Now().UnixNano())
-
-	const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" // символы, из которых будет формироваться строка
-	length := 4                                                                      // длина генерируемой строки
-
-	randomValue := make([]byte, length)
-	for i := range randomValue {
-		randomValue[i] = charset[rand.Intn(len(charset))]
-	}
-
-	result := string(randomValue)
-
-	return result
 }
