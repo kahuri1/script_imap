@@ -32,6 +32,7 @@ func main() {
 	}()
 
 	from := cfg.From
+
 	lastIUD := cfg.LastUID
 
 	for {
@@ -41,6 +42,10 @@ func main() {
 		}
 
 		to := mbox.Messages
+		//для первого запуска чтобы получить кол-во писем
+		if from == 0 {
+			from = mbox.Messages
+		}
 		seqset := new(imap.SeqSet)
 		sect := &imap.BodySectionName{}
 		seqset.AddRange(from, to)
