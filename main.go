@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-message/mail"
 	"golang.org/x/text/encoding/charmap"
@@ -20,7 +19,7 @@ func main() {
 
 	logFile, err := os.OpenFile("errors.txt", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Println("Failed to open log file:", err)
+		log.Println("Failed to open log file:", err)
 		return
 	}
 	defer logFile.Close()
@@ -83,9 +82,8 @@ func main() {
 				continue
 			}
 
-			params := msg.BodyStructure.Params
-			charset := params["charset"]
-			fmt.Println(charset)
+			//params := msg.BodyStructure.Params
+			//charset := params["charset"]
 
 			mr, err := mail.CreateReader(msg.GetBody(section))
 			if err != nil {
@@ -162,14 +160,15 @@ func processPart(p *mail.Part, cfg Config, msg *imap.Message) error {
 			end := len(filename) - len("?=")
 			filename = filename[start:end]
 			decoded, err := base64.StdEncoding.DecodeString(filename)
+			decoder := charmap.Windows1251.NewDecoder()
+			filenameDecoder, err := decoder.String(string(decoded))
 			if err != nil {
 				log.Println("Ошибка декодирования:", err)
 			}
-			filename = string(decoded)
+			filename = string(filenameDecoder)
 		}
 
 		if strings.Contains(filename, "koi8-r") {
-			fmt.Println(filename)
 			start := len("=?windows-1251?B?")
 			end := len(filename) - len("?=")
 			filename = filename[start:end]
