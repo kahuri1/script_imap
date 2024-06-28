@@ -1,6 +1,7 @@
 email: bulanva@internet.ru
-file_storage_directory: C:/proect/
+file_storage_directory: /test/
+file_log_path: /log.txt
 from: 0
 imap: imap.mail.ru:993
 last_uid: <CAPT3h_g0KMXGAWLfyz4U1VUCZv89AmjH1s3PbRkG+37Vg10H2Q@mail.gmail.com>
-password: QLQgCWrcCCwUz1RGdxqb
+password:

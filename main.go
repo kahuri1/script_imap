@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"time"
 )
 
@@ -20,6 +21,17 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("error connect server: %s", err.Error())
 	}
+
+	//TODO В конфиг "errors.txt"
+	logFile, err := os.OpenFile(cfg.logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println("Failed to open log file:", err)
+		return
+	}
+	defer logFile.Close()
+
+	log.SetOutput(logFile)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	err = loginToMail(cfg, c)
 	if err != nil {
@@ -65,7 +77,7 @@ func main() {
 
 				mr, err := mail.CreateReader(msg.GetBody(section))
 				if err != nil {
-					log.Fatal(err)
+					log.Fatal(err) // TODO убрать фатал
 				}
 
 				for {
@@ -73,7 +85,7 @@ func main() {
 					if err == io.EOF {
 						break
 					} else if err != nil {
-						log.Fatal(err)
+						log.Fatal(err) // TODO убрать фатал
 					}
 
 					switch h := p.Header.(type) {
@@ -85,13 +97,17 @@ func main() {
 						err := ioutil.WriteFile(cfg.Storage+filename, b, 0777)
 
 						if err != nil {
-							break
+							break // TODO убрать фатал
 						}
 					}
 				}
 
 				lastIUD = msg.Envelope.MessageId
-				from++
+
+				if from < to {
+					from++
+				}
+
 				err = SetDefaultValue(from, lastIUD)
 				if err != nil {
 					logrus.Fatalf("error setting default from: %s", err.Error())
