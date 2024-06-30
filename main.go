@@ -22,7 +22,6 @@ func main() {
 		logrus.Fatalf("error connect server: %s", err.Error())
 	}
 
-	//TODO В конфиг "errors.txt"
 	logFile, err := os.OpenFile(cfg.logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println("Failed to open log file:", err)
@@ -54,7 +53,7 @@ func main() {
 		}
 
 		to := mbox.Messages
-		//для первого запуска чтобы получить кол-во писем
+
 		if from == 0 {
 			from = mbox.Messages
 		}
@@ -74,10 +73,13 @@ func main() {
 			if msg.Envelope.MessageId == lastIUD {
 				continue
 			} else {
-
+				email := msg.Envelope.From[0].PersonalName
+				if email == "" {
+					email = msg.Envelope.From[0].MailboxName
+				}
 				mr, err := mail.CreateReader(msg.GetBody(section))
 				if err != nil {
-					log.Fatal(err) // TODO убрать фатал
+					log.Println(err)
 				}
 
 				for {
@@ -85,7 +87,7 @@ func main() {
 					if err == io.EOF {
 						break
 					} else if err != nil {
-						log.Fatal(err) // TODO убрать фатал
+						log.Println(err)
 					}
 
 					switch h := p.Header.(type) {
@@ -94,10 +96,10 @@ func main() {
 						filename, _ := h.Filename()
 
 						b, _ := ioutil.ReadAll(p.Body)
-						err := ioutil.WriteFile(cfg.Storage+filename, b, 0777)
+						err = ioutil.WriteFile(cfg.Storage+filename, b, 0777)
 
 						if err != nil {
-							break // TODO убрать фатал
+							log.Printf("Вложение не сохранено, имя файла: %s, почта: %s", filename, email)
 						}
 					}
 				}
@@ -110,7 +112,7 @@ func main() {
 
 				err = SetDefaultValue(from, lastIUD)
 				if err != nil {
-					logrus.Fatalf("error setting default from: %s", err.Error())
+					log.Printf("error setting default from: %s", err.Error())
 				}
 			}
 		}
