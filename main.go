@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/emersion/go-imap"
+	_ "github.com/emersion/go-message/charset"
 	"github.com/emersion/go-message/mail"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -87,7 +88,7 @@ func main() {
 					if err == io.EOF {
 						break
 					} else if err != nil {
-						log.Println(err)
+						log.Println(err, from)
 					}
 
 					switch h := p.Header.(type) {
@@ -99,8 +100,9 @@ func main() {
 						err = ioutil.WriteFile(cfg.Storage+filename, b, 0777)
 
 						if err != nil {
-							log.Printf("Вложение не сохранено, имя файла: %s, почта: %s", filename, email)
+							log.Printf("Вложение не сохранено, имя файла: %s, почта: %s, номер письма: %d ", filename, email, from)
 						}
+
 					}
 				}
 
