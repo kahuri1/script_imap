@@ -5,3 +5,4 @@ from:
 imap:
 last_uid: <e151b44b-cf08-4897-b0fe-4ebc13c96622@tardispharm.ru>
 password:
+time_delay: 5

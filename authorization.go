@@ -21,13 +21,14 @@ func initConfig() error {
 
 func initAuth() Config {
 	cfg := Config{
-		Imap:     viper.GetString("imap"),
-		Email:    viper.GetString("email"),
-		Password: viper.GetString("password"),
-		LastUID:  viper.GetString("last_uid"),
-		From:     viper.GetUint32("from"),
-		Storage:  viper.GetString("file_storage_directory"),
-		logPath:  viper.GetString("file_log_path"),
+		Imap:      viper.GetString("imap"),
+		Email:     viper.GetString("email"),
+		Password:  viper.GetString("password"),
+		LastUID:   viper.GetString("last_uid"),
+		From:      viper.GetUint32("from"),
+		Storage:   viper.GetString("file_storage_directory"),
+		logPath:   viper.GetString("file_log_path"),
+		timeDelay: viper.GetUint32("time_delay"),
 	}
 
 	return cfg

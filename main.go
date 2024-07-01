@@ -122,7 +122,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * time.Duration(cfg.timeDelay))
 
 	}
 }

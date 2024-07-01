@@ -1,13 +1,14 @@
 package main
 
 type Config struct {
-	Imap     string
-	Email    string
-	Password string
-	LastUID  string
-	From     uint32
-	Storage  string
-	logPath  string
+	Imap      string
+	Email     string
+	Password  string
+	LastUID   string
+	From      uint32
+	Storage   string
+	logPath   string
+	timeDelay uint32
 }
 
 type LastMessageInfo struct {
